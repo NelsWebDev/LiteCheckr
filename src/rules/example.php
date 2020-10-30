@@ -6,6 +6,6 @@ class Example
 {
     public static function abc123()
     {
-        return (bool) false;
+        return (bool) true;
     }
 }

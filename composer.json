@@ -1,0 +1,23 @@
+{
+    "name": "nels/litecheckr",
+    "description": "This is a A quick PHP object for verifying data objects and data forms. Feel free to just use the rules classes as well for data validation",
+    "authors": [
+        {
+            "name": "nels",
+            "email": "contact@nels.info",
+            "homepage": "https://nels.info",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LiteCheckr\\": "src/"
+        }
+    },
+    "archive": {
+        "exclude": ["/docs/*", "/examples/*"]
+    }
+}

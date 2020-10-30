@@ -52,10 +52,11 @@ class Rule
      */
     public function validate(): bool
     {
-        $path = RulesHelper::findRuleFunction($this->name);
-
+        $path = RulesHelper::ruleToFunc($this->name);
+        if(!$path)
+            die("Invalid rule");
         $all_arguments = array_merge([$this->field->value()], $this->getArguments());
-        return  (bool) call_user_func_array($path, $all_arguments);
+        return (bool) call_user_func_array($path, $all_arguments);
     }
     public function getArguments()
     {
