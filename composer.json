@@ -1,6 +1,9 @@
 {
     "name": "nels/litecheckr",
     "description": "This is a A quick PHP object for verifying data objects and data forms. Feel free to just use the rules classes as well for data validation",
+    "type": "package",
+    "version": "1.0.1",
+    "homepage": "https://litecheckr.nels.co",
     "authors": [
         {
             "name": "nels",
