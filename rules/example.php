@@ -1,10 +1,11 @@
 <?php
-    namespace LiteCheckr\Rules;
-    class Example
+
+namespace LiteCheckr\Rules;
+
+class Example
+{
+    public static function abc123()
     {
-        // first argument is value when called, subsequent ones used in callback
-        public static function exampleFunction($value, $domain_name)
-        {
-            return true;
-        }
+        return (bool) false;
     }
+}

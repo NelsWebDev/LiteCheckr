@@ -1,103 +1,162 @@
 <?php
-    namespace LiteCheckr;
-    class Field
+
+namespace LiteCheckr;
+
+class Field
+{
+    use ValidityChecks;
+
+    private $value;
+    public $rules = [];
+    public $name;
+    public $formObject;
+
+    /**
+     * Create a field for a given form. Field is not added into Form's field array.
+     * @param Form $formObject Parent Form Object
+     * @param string $fieldName name of Field
+     */
+    public function __construct(Form $formObject, string $fieldName)
     {
-        public $form;
-        public $name;
-        private $rules = [];
-        public function __construct(&$form_object, $field_name, $field_rules = [] )
-        {
-            $this->form = $form_object;
-            $this->name = $field_name;
-
-            if($field_rules && is_array($field_rules) )
-            {
-               
-                foreach($field_rules as $rule)
-                {
-                    if(is_string($rule))
-                    {
-                        call_user_func_array(array($this, "addRule"), [$rule]);
-                    }
-                    else
-                        call_user_func_array(array($this, "addRule"), $rule);
-                }
-            }
-            
-        }
-
-        public function form()
-        {
-            return $this->form;
-        }
-
-        public function sibling($sibling_name)
-        {
-            return $this->form->getField($sibling_name);
-        }
-
-        public function addRule($rule_name, $args = [] , $error_message = null) : ?Rule
-        {
-            if(!isset($this->rules[$rule_name]))
-            {
-                $rule_object = new Rule($this, $rule_name, $args, $error_message);
-                $this->rules[$rule_name] = $rule_object;
-                return $this->getRule($rule_name);
-            }
-                
-            else
-                die("rule already in use");
-        }
-
-        public function getRule($rule_name) : ?Rule 
-        {
-            return $this->rules[$rule_name] ?: null;
-        }
-
-        public function rule($rule_name) : ?Rule
-        {
-            $rule = $this->getRule($rule_name);
-            if($rule)
-                return $rule;
-            else
-                return call_user_func_array(array($this, "addRule"), func_get_args());
-        }
-
-        public function value($new_value = null) 
-        {
-            if(count(func_get_args()) === 1)
-                $this->value = $new_value;
-            return $this->value;
-        }
-
-        public function valid()
-        {
-            return (bool) !$this->getErrors();
-        }
-        public function getErrors()
-        {
-            $errors = [];
-            foreach($this->rules as $rule_name => $rule)
-            {
-                if(!$rule->isMet() )
-                    $errors[$rule_name] = $rule->errorMessage;
-            }
-            return $errors;
-        }
-
-        public function invalid()
-        {
-            return !call_user_func_array(array($this, "valid"), func_get_args());
-        }
-
-        public function isValid() 
-        {
-            return call_user_func_array(array($this, "valid"), func_get_args());
-        }
-
-        public function addCustomRule(string $rule_name, callable $rule_callback, $args = [], $error_message = null )
-        {
-            $this->rules[$rule_name]  = new CustomRule($this, $rule_name, $rule_callback, $args, $error_message);
-            return $this->rules[$rule_name];
-        }
+        $this->formobject = $formObject;
+        $this->name = $fieldName;
     }
+    /**
+     * Update (optional) and return field's value
+     * @param mixed|null $newValue new field value
+     */
+    public function value($newValue = null)
+    {
+        if (count(func_get_args()) === 1) {
+            $this->value = $newValue;
+        }
+        return $this->value;
+    }
+
+    public function __toString()
+    {
+        return (string) $this->value();
+    }
+
+    /**
+     * Checks if field value's rule requirements are met. Updates rules error array accordingly.
+     * @return bool Returns true if field value is valid.
+     */
+    public function validate(): bool
+    {
+        foreach ($this->rules as $rule) {
+            if (!$rule->validate()) {
+                $this->errors[$rule->name]  = $rule->errorMessage;
+            }
+        }
+        return (bool) empty($this->errors);
+    }
+
+    /**
+     *
+     * @param string $ruleName Name of rule function to test. (Example: required, standard.required, example.test)
+     * @param array|string|null $arguments_or_error Optional array containing additional rule function arguments. Can also set error message instead
+     * @param string|null $error_message Error message used when rule is not met.
+     * @return Field
+     */
+    public function addRule(string $ruleName, $arguments_or_error = [], string $error_message = null): self
+    {
+        if ($this->ruleExists($ruleName)) {
+            error_log("Rule \"{$ruleName}\" is already in use", E_USER_NOTICE);
+        }
+
+        $bulk_call = array_column(debug_backtrace(), "function");
+        $bulk_call = in_array("addFields", $bulk_call);
+        if (is_string($arguments_or_error) && !is_string($error_message) && !$bulk_call) {
+            $error_message = $arguments_or_error;
+            $arguments_or_error = [];
+        }
+        if (!is_array($arguments_or_error)) {
+            $arguments_or_error = [];
+        }
+
+        $this->rules[$ruleName] = new Rule($this, $ruleName, $arguments_or_error);
+        $rule = $this->getRule($ruleName);
+        $rule->setErrorMessage($error_message);
+        return $this;
+    }
+
+    /**
+     * Returns the rule object of a given rule
+     * @param string $ruleName
+     * @return null|Rule
+     */
+    public function getRule(string $ruleName): ?Rule
+    {
+        if ($this->ruleExists($ruleName)) {
+            return $this->rules[$ruleName];
+        }
+        error_log("Rule \"{$ruleName}\" is not in use", E_USER_NOTICE);
+        return null;
+    }
+    /**
+     * Delete previously included rule
+     * @param string $ruleName rule to delete
+     * @return Field Parent field object
+     */
+    public function deleteRule(string $ruleName): self
+    {
+        if (!$this->ruleExists(($ruleName))) {
+            error_log("Rule \"{$ruleName}\" is not in use", E_USER_NOTICE);
+        } else {
+            unset($this->rules[$ruleName]);
+        }
+        return $this;
+    }
+
+    /**
+     * Checks if rule is defined
+     * @param string $ruleName rule name to check
+     */
+    public function ruleExists(string $ruleName): bool
+    {
+        return key_exists($ruleName, $this->rules);
+    }
+
+    /**
+     * Shortcut combination of getRule and addRule. Adds rule if rule not in use. For more information see Fieldf.addRule
+     * @param string $ruleName name of rule
+     * @return Rule Rule object
+     */
+    public function rule(string $ruleName): Rule
+    {
+        if (!$this->ruleExists($ruleName)) {
+            call_user_func_array(array($this, "addRule"), func_get_args());
+        }
+        return $this->getRule($ruleName);
+    }
+
+    /**
+     * Returns array of defined rule objects
+     * @return array
+     */
+    public function getRules(): array
+    {
+        return $this->rules;
+    }
+
+    /**
+     * Set the error message of a rule field. Used to access protected property.
+     * @param mixed $rule_name
+     * @param mixed $error_message
+     * @return Field
+     */
+    public function setError($rule_name, $error_message): self
+    {
+        $this->errors[$rule_name] = $error_message;
+        return $this;
+    }
+
+    /**
+     * @return Form Field's Parent Form
+     */
+    public function form(): Form
+    {
+        return $this->formObject;
+    }
+}

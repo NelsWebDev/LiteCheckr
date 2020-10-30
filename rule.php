@@ -1,46 +1,64 @@
 <?php
-    namespace LiteCheckr;
-    class Rule
+
+namespace LiteCheckr;
+
+class Rule
+{
+    use ValidityChecks;
+
+    public $args = [];
+    public $errorMessage;
+    public $name;
+    public $field;
+
+    /**
+     *
+     * @param Field $field_object Parent Field Object
+     * @param string $ruleName name of rule function to use.
+     * Use dot notation for non standard rules (standard.rulefunction)
+     * @param null|array $callbackArgs Optional additional arguments passed onto rules function.
+     */
+    public function __construct(Field $field_object, string $ruleName, ?array $callbackArgs)
     {
-        public $field;
-        public $name;
-        private $callbackFunction;
-        public $errorMessage;
-        public function __construct($field_object, $rule_name, $args = [], $error_message = null)
-        {
-
-            $this->field = &$field_object;
-            $this->name = $rule_name;
-            $this->callbackFunction = RuleHelper::findRuleFunction($rule_name);
-
-            if(is_string($args) && !is_string($error_message))
-            {
-                $error_message = $args;
-                $args = [];
-            }
-            if(!$error_message)
-                $error_message = "Failed " . $rule_name . " validation";
-
-            $this->errorMessage = $error_message;
-            $this->args = $args;
-        }
-
-        public function isMet() : bool
-        {
-            $full_args = array_merge([$this->field->value()], $this->args);
-            return (bool) call_user_func_array($this->callbackFunction, $full_args);
-        }
-        public function nextRule() : ?Rule
-        {
-            return call_user_func_array(array($this->field, "rule"), func_get_args());
-        }
-        public function field()
-        {
-            return $this->field;
-        }
-
-        public function form()
-        {
-            return $this->field()->form();
-        }
+        $this->setArguments($callbackArgs);
+        $this->name = $ruleName;
+        $this->field = $field_object;
     }
+    /**
+     * Sets the error message of a rule
+     * @param null|string $errorMessage new error message
+     * @return Rule Rule object whos error message was updated.
+     */
+    public function setErrorMessage(?string $errorMessage): self
+    {
+        $this->errorMessage = $errorMessage;
+        return $this;
+    }
+
+    /**
+     * Updates array of arguments that are passed onto rules function
+     * @param array $arguments Non assocative array of values used as arguments following field value.
+     */
+    public function setArguments(array $arguments): self
+    {
+        $this->args = $arguments;
+        return $this;
+    }
+
+
+    /**
+     * Checks if rule requirment is met.
+     * @return bool returns true if function evaluates to boolean true
+     */
+    public function validate(): bool
+    {
+        $path = RulesHelper::findRuleFunction($this->name);
+
+        $all_arguments = array_merge([$this->field->value()], $this->getArguments());
+        return  (bool) call_user_func_array($path, $all_arguments);
+    }
+    public function getArguments()
+    {
+        return $this->args;
+    }
+}
