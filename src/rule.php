@@ -53,8 +53,9 @@ class Rule
     public function validate(): bool
     {
         $path = RulesHelper::ruleToFunc($this->name);
-        if(!$path)
+        if (!$path) {
             die("Invalid rule");
+        }
         $all_arguments = array_merge([$this->field->value()], $this->getArguments());
         return (bool) call_user_func_array($path, $all_arguments);
     }

@@ -10,7 +10,7 @@ class RulesHelper
 {
     public const RULES_NAMESPACE = "LiteCheckr\\Rules";
     public const STD_CLASS = "LiteCheckr\\Rules\\Standard";
-    
+
     public static function getIncludedRules(): array
     {
         return (get_class_methods(self::STD_CLASS)) ?: [];
@@ -20,7 +20,7 @@ class RulesHelper
      * @param string $function_name name of rule using dot notation. standard.required
      * @return null|string
      */
-    public static function ruleToFunc($rule): ?String
+    public static function ruleToFunc($rule): ?string
     {
         $parts_of_function = explode(".", $rule);
 
@@ -38,9 +38,10 @@ class RulesHelper
             $function_path = $class_path . "::" . $function_name;
         }
 
-        if (method_exists($class_path, $function_name))
+        if (method_exists($class_path, $function_name)) {
             return $function_path;
-        else
+        } else {
             return null;
+        }
     }
 }
