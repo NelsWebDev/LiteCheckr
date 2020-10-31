@@ -10,7 +10,7 @@ No dependencies, works with or without Composer.
 
 #### Manual Installation
 
-[Click here]() to download the latest version of the full LiteChecker script or run the following.
+[Click here](https://github.com/NelsWebDev/LiteCheckr/releases/download/v1.0.1/LiteCheckr.v1.0.1.Full.zip) to download the latest version of the full LiteChecker script or run the following.
 
 ```bash
 wget https://github.com/NelsWebDev/LiteCheckr/releases/download/v1.0.1/LiteCheckr.v1.0.1.Full.zip \ 
